@@ -3,29 +3,24 @@ import React from 'react';
 import {
   BrowserRouter, Routes, Route,
 } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import NotFoundPage from './NotFoundPage.jsx';
 import LoginPage from './LoginPage.jsx';
-import Navigation from './Navigation.jsx';
-// import RegistrationPage from './RegistrationPage';
-import routes from './routes.js';
 import RegistrationPage from './RegistrationPage.jsx';
+import MainPage from './MainPage.jsx';
+import { userAuth } from './slices/authSlice.js';
 
 function App() {
+  const user = useSelector(userAuth);
   return (
-
-    <div className="vh-100 d-flex flex-column">
-      <Navigation />
-      <BrowserRouter>
-
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path={routes.loginPage()} element={<LoginPage />} />
-          <Route path={routes.notFoundPage()} element={<NotFoundPage />} />
-          <Route path={routes.registrationPage()} element={<RegistrationPage />} />
-        </Routes>
-
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="*" element={<NotFoundPage />} />
+        <Route path="/" element={Object.keys(user).length > 0 ? <MainPage /> : <LoginPage />} />
+        <Route path="login" element={Object.keys(user).length > 0 ? <MainPage /> : <LoginPage />} />
+        <Route path="signup" element={Object.keys(user).length > 0 ? <MainPage /> : <RegistrationPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

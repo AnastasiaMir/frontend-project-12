@@ -1,24 +1,27 @@
 import axios from 'axios';
-import React, { useEffect, useRef, useState, useContext, createContext } from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
-import { Button, Form } from 'react-bootstrap';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Button, Form} from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import routes from './routes.js';
 import image from './images/chatlogo.jpg';
+import { useDispatch } from 'react-redux'
+import {auth, userAuth } from './slices/authSlice.js'
+import HeaderContainer from './HeaderContainer.jsx';
+import { useSelector } from 'react-redux';
 
-const authContext = createContext({});
-const useAuth = () => useContext(authContext);
-
+const sendAuthRequest = async (dispatch, loginData) => {
+  const res = await axios.post(routes.signIn(), loginData);
+  const { token, username } = res.data;
+  dispatch(auth({ username, token })); 
+};
 
 const LoginPage = () => {
-  const auth = useAuth();
-  const [authFailed, setAuthFailed] = useState(false);
-  const inputRef = useRef();
-  const location = useLocation();
+  const dispatch = useDispatch()
   const navigate = useNavigate();
-  useEffect(() => {
-    inputRef.current.focus();
-  }, []);
+  const [err, setErr] = useState('')
+  const user = useSelector(userAuth);
+
 
   const formik = useFormik({
     initialValues: {
@@ -26,28 +29,25 @@ const LoginPage = () => {
       password: '',
     },
     onSubmit: async (values) => {
-      setAuthFailed(false);
-
       try {
-        const res = await axios.post(routes.loginPath(), values);
-        localStorage.setItem('userId', JSON.stringify(res.data));
-        auth.logIn();
-        const { from } = location.state;
-        navigate(from);
-      } catch (err) {
-        formik.setSubmitting(false);
-        if (err.isAxiosError && err.response.status === 401) {
-          setAuthFailed(true);
-          inputRef.current.select();
-          return;
+        await sendAuthRequest(dispatch, values); 
+        navigate('/'); 
+      } catch (error) {
+        formik.setSubmitting(false); 
+        if (error.isAxiosError && error.response.status === 401) { 
+          setErr(error);
+        } else {
+          throw error;
         }
-        throw err;
       }
-    },
-  });
+  }});
+
+  
+
+
 
   return (
-    <div className="container-fluid h-100">
+    <HeaderContainer >
       <div className="row justify-content-center pt-5 h-100 align-content-center">
         <div className="col-12 col-md-8 col-xxl-6">
           <div className="card shadow-sm">
@@ -71,9 +71,9 @@ const LoginPage = () => {
                   name="username"
                   id="username"
                   autoComplete="username"
-                  isInvalid={authFailed}
+                  isInvalid={err !== ''}
                   required
-                  ref={inputRef}
+                  
                 />
                 <Form.Label htmlFor="username">Ваш ник</Form.Label>
               </Form.Group>
@@ -87,7 +87,7 @@ const LoginPage = () => {
                   name="password"
                   id="password"
                   autoComplete="current-password"
-                  isInvalid={authFailed}
+                  isInvalid={err !== ''}
                   required
                 />
                 <Form.Label htmlFor="password">Пароль</Form.Label>
@@ -106,15 +106,16 @@ const LoginPage = () => {
           <div className="card-footer p-4">
             <div className="text-center">
               <span>Нет аккаунта? </span>
-              <a href={routes.registrationPage()}>Регистрация</a>
+              <a href="/signup">Регистрация</a>
             </div>
           </div>
           </div>
         </div>
       </div>
-    </div>
+    </HeaderContainer>
   );
-};
+}
+;
 
 export default LoginPage;
 
